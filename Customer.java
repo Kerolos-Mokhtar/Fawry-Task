@@ -1,7 +1,7 @@
-public class Customers {
+public class Customer {
     private double balance;
 
-    public Customers(double balance) {
+    public Customer(double balance) {
         this.balance = balance;
     }
 
@@ -12,16 +12,12 @@ public class Customers {
     public void setBalance(double balance) {
         this.balance = balance;
     }
-
-    public void addBalance(double amount) {
-        this.balance += amount;
-    }
-
-    public void deductBalance(double amount) {
+    
+    public void deductBalance(double amount){
         if (amount > this.balance) {
             System.out.println("Insufficient balance to deduct " + amount);
             return;
-        }
-        this.balance -= amount;
-    } 
+        }else{
+        this.balance -= amount;}
+    }
 }

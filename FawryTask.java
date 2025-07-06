@@ -1,16 +1,17 @@
 import java.time.LocalDate;
+import java.time.Month;
 
 public class FawryTask {
     public static void main(String[] args) {
-        Products cheese = new Products("cheese", 2, 10, false, LocalDate.of(2025, 10, 9), true, .3);
-        Products biscuits = new Products("Biscuits", 1.5, 20, false, LocalDate.of(2025, 10, 22), true, .5);
-
-        Cart cart = new Cart();
-        cart.addItem(cheese, 2);
-        cart.addItem(biscuits, 3);
-        
-        Customers customer = new Customers(20);
-        cart.checkout(customer);
-        
+        Product cheese = new ShippableExpirableProduct("Cheese", 5, 20, LocalDate.of(2025, 7, 20), .5);
+        Product biscuits = new ShippableExpirableProduct("Biscuits", 7, 20, LocalDate.of(2025, 7, 20), .7);
+        Product rice = new ShippableProduct("Rice", 2.5, 20, 2.0);
+        Product mobile_scratch_card = new Product("Mobile scratch cards", 6, 20);
+        Cart c = new Cart();
+        c.add(cheese, 2);
+        c.add(biscuits, 1);
+        c.add(rice, 2);
+        c.add(mobile_scratch_card, 3);
+        c.checkOut(new Customer(100));
     }
 }

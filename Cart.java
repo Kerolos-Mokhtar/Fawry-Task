@@ -1,98 +1,102 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.time.LocalDate;
 
 public class Cart {
-    private List<CartItem> items = new ArrayList<>();
 
-    public void addItem(Products products, int quantity) {
-        items.add(new CartItem(products, quantity));
+    List<CartItem> products = new ArrayList<>();
+
+    public void add(Product product, int quantity) {
+        if (quantity <= 0) {
+            System.out.println("can't add this quantity.");
+            return;
+        }
+        products.add(new CartItem(product, quantity));
     }
 
-    public void checkout(Customers customer) {
-        double subtotal = 0.0;
-        double shippingFees = 0.0;
-        double totalPackageWeight = 0.0;
+    public void checkOut(Customer customer) {
+        double subtotal = 0;
+        double shipping = 0;
+        double totalPackageWeight = 0;
 
-        List<ShippableItem> shippableItems = new ArrayList<>();
-
-        if (items.isEmpty()) {
-            System.out.println("Cart is empty.");
+        if (products.isEmpty()) {
+            System.out.println("Cart is Empty.");
             return;
         }
 
-        for (CartItem item : items) {
-            Products product = item.getProduct();
-
-            if (product.getQuantity() < item.getQuantity()) {
-                System.out.println("Error: " + product.getProductName() + " is out of stock.");
+        for (CartItem c : products) {
+            // Ensure product quantity
+            if (c.getQuantity() > c.getProduct().getQuantity()) {
+                System.out.println(c.getProduct().getName() + " is out of stock.");
+                System.out.println("Available stock: " + c.getProduct().getQuantity());
                 return;
             }
 
-            if (product.isExpired()) {
-                System.out.println("Error: " + product.getProductName() + " is expired.");
-                return;
-            }
-        }
-
-        for (CartItem item : items) {
-            Products product = item.getProduct();
-
-            subtotal += item.getTotalPrice();
-
-            if (product.isShippable()) {
-                double itemWeight = product.getWeight() * item.getQuantity();
-                totalPackageWeight += itemWeight;
-                shippingFees += itemWeight * .5;
-
-                shippableItems.add(new ShippableItem() {
-                    @Override
-                    public String getName() {
-                        return product.getProductName();
-                    }
-
-                    @Override
-                    public double getWeight() {
-                        return product.getWeight();
-                    }
-                });
-            }
-        }
-
-        double total = subtotal + shippingFees;
-
-        if (customer.getBalance() < total) {
-            System.out.println("Error: Insufficient balance.");
-            return;
-        }
-
-        for (CartItem item : items) {
-            item.getProduct().reduceQuantity(item.getQuantity());
-        }
-        customer.deductBalance(total);
-
-        // === Shipment notice ===
-        if (!shippableItems.isEmpty()) {
-            System.out.println("\n** Shipment notice **");
-            for (CartItem item : items) {
-                Products product = item.getProduct();
-                if (product.isShippable()) {
-                    double totalWeight = product.getWeight() * item.getQuantity();
-                    System.out.println(item.getQuantity()+ "x " + product.getProductName()+ ": " + totalWeight);
+            // Ensure product expiration
+            if (c.getProduct() instanceof Expirable) {
+                Expirable exp = (Expirable) c.getProduct();
+                if (exp.getExpirableDate().isBefore(LocalDate.now())) {
+                    System.out.println("Error: " + c.getProduct().getName() + " is expired.");
+                    return;
                 }
             }
-            System.out.println("Total package weight: " + totalPackageWeight +"g");
         }
 
-        // === Checkout receipt ===
-        System.out.println("\n** Checkout receipt **");
-        for (CartItem item : items) {
-            Products product = item.getProduct();
-            double itemTotal = item.getTotalPrice();
-            System.out.println(item.getQuantity() + "x " + product.getProductName() + ": " + itemTotal);
+        List<CartItem> shippableProducts = new ArrayList<>();
+
+        // Calculate subtotal & shipping
+        for (CartItem c : products) {
+            subtotal += c.getProduct().getPrice() * c.getQuantity();
+
+            if (c.getProduct() instanceof Shippable) {
+                shippableProducts.add(c);
+                double itemWeight = c.getQuantity() * ((Shippable) c.getProduct()).getWeight();
+                totalPackageWeight += itemWeight;
+            }
         }
-        System.out.println(" ----------------------");
-        System.out.println("Subtotal: $"+ subtotal);
-        System.out.println("Shipping: $"+ shippingFees);
-        System.out.println("Amount  :$"+ total);
+
+        shipping = totalPackageWeight * .5;
+
+        double total = subtotal + shipping;
+
+        if (customer.getBalance() < total) {
+            System.out.println("Insufficient balance.");
+            return;
+        }
+        
+        customer.deductBalance(total);
+
+        for (CartItem c : products) {
+            c.getProduct().reduceQuantity(c.getQuantity());
+        }
+
+        // Print shipment notice 
+        if (!shippableProducts.isEmpty()) {
+            System.out.println("\n** Shipment notice **");
+            for (CartItem c : shippableProducts) {
+                double itemWeightGram = c.getQuantity() * ((Shippable) c.getProduct()).getWeight() * 1000;
+                System.out.printf("%dx %-10s: %.0fg\n",
+                        c.getQuantity(),
+                        c.getProduct().getName(),
+                        itemWeightGram);
+            }
+            System.out.printf("Total package weight: %.1fkg\n", totalPackageWeight);
+        }
+
+        // Print checkout receipt 
+        System.out.println("\n** Checkout receipt **");
+        for (CartItem c : products) {
+            System.out.printf("%dx %-10s: %.0f\n",
+                    c.getQuantity(),
+                    c.getProduct().getName(),
+                    c.getProduct().getPrice() * c.getQuantity());
+        }
+
+        System.out.println("----------------------");
+        System.out.printf("Subtotal: %.0f\n", subtotal);
+        System.out.printf("Shipping: %.0f\n", shipping);
+        System.out.printf("Amount: %.0f\n", total);
+        System.out.printf("Customer remaining balance: %.0f\n", customer.getBalance());
     }
+
 }

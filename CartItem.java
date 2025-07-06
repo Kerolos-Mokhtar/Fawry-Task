@@ -1,22 +1,17 @@
-
 public class CartItem {
-    private Products products;
+    private Product product;
     private int quantity;
 
-    public CartItem(Products products, int quantity) {
-        this.products = products;
+    public CartItem(Product product, int quantity) {
+        this.product = product;
         this.quantity = quantity;
     }
 
-    public Products getProduct() {
-        return products;
+    public Product getProduct() {
+        return product;
     }
 
     public int getQuantity() {
         return quantity;
-    }
-
-    public double getTotalPrice() {
-        return products.getPrice() * quantity;
     }
 }
